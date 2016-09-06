@@ -1,0 +1,2 @@
+-I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include
+-D LAMBDA_DUMMY -m64 -O3 -gencode arch=compute_20,code=sm_20 -I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include -L./inc/sprng2.0-lite/lib -lsprng -lm -I -I -I./out/shortest_path/default/instance/ -I./core

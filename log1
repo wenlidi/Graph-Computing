@@ -1,0 +1,222 @@
+mkdir -p ./out/shortest_path/default
+mkdir -p ./out/shortest_path/default/bin
+mkdir -p ./out/shortest_path/default/instance
+./compiler/gpregel.py \
+		-d shortest_path/user_graph_data_types.h \
+		-t ./core/template/device_graph_data_types.h,./core/template/edge_content_manager.cu,./core/template/generated_io_data_types.h,./core/template/global_manager.cu,./core/template/host_graph_data_types.h,./core/template/host_in_graph_data_types.h,./core/template/host_out_graph_data_types.h,./core/template/message_content_manager.cu,./core/template/user_api.h,./core/template/vertex_content_manager.cu \
+		-o ./out/shortest_path/default/instance
+data type file:  shortest_path/user_graph_data_types.h
+template files:  ['./core/template/device_graph_data_types.h', './core/template/edge_content_manager.cu', './core/template/generated_io_data_types.h', './core/template/global_manager.cu', './core/template/host_graph_data_types.h', './core/template/host_in_graph_data_types.h', './core/template/host_out_graph_data_types.h', './core/template/message_content_manager.cu', './core/template/user_api.h', './core/template/vertex_content_manager.cu']
+output directory:  ./out/shortest_path/default/instance
+struct pattern:  (?<!\w)struct\s+Global\s+\{(?:\s*(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;)*\s*\}
+['struct Global {\n  unsigned int source = RAND_VERTEX_ID;\n}']
+statement pattern:  (?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;
+['unsigned int source = RAND_VERTEX_ID;']
+matched statement pattern:  ()(int|unsigned\s*int|char|bool|float)\s+([_a-zA-Z]\w*)\s*(?:=\s*([^;]+))?;
+[('', 'unsigned int', 'source', 'RAND_VERTEX_ID')]
+[{'val': 'RandUtil::RandVertexId()', 'name': 'source', 'io': 'in', 'type': 'unsigned int'}]
+
+struct pattern:  (?<!\w)struct\s+Vertex\s+\{(?:\s*(?:in|out)\s+(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;)*\s*\}
+['struct Vertex {\n  out unsigned int dist = ~0U;\n  out unsigned int pre = ~0U;\n}']
+statement pattern:  (?:in|out)\s+(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;
+['out unsigned int dist = ~0U;', 'out unsigned int pre = ~0U;']
+matched statement pattern:  (in|out)\s+(int|unsigned\s*int|char|bool|float)\s+([_a-zA-Z]\w*)\s*(?:=\s*([^;]+))?;
+[('out', 'unsigned int', 'dist', '~0U')]
+[('out', 'unsigned int', 'pre', '~0U')]
+[{'val': '~0U', 'name': 'dist', 'io': 'out', 'type': 'unsigned int'}, {'val': '~0U', 'name': 'pre', 'io': 'out', 'type': 'unsigned int'}]
+
+struct pattern:  (?<!\w)struct\s+Edge\s+\{(?:\s*(?:in|out)\s+(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;)*\s*\}
+['struct Edge {\n  in unsigned int weight = RAND_SMALL_UINT;\n}']
+statement pattern:  (?:in|out)\s+(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;
+['in unsigned int weight = RAND_SMALL_UINT;']
+matched statement pattern:  (in|out)\s+(int|unsigned\s*int|char|bool|float)\s+([_a-zA-Z]\w*)\s*(?:=\s*([^;]+))?;
+[('in', 'unsigned int', 'weight', 'RAND_SMALL_UINT')]
+[{'val': 'RandUtil::RandSmallUInt()', 'name': 'weight', 'io': 'in', 'type': 'unsigned int'}]
+
+struct pattern:  (?<!\w)struct\s+Message\s+\{(?:\s*(?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;)*\s*\}
+['struct Message {\n  unsigned int dist;\n}']
+statement pattern:  (?:int|unsigned\s*int|char|bool|float)\s+[_a-zA-Z]\w*\s*(?:=[^;]+)?;
+['unsigned int dist;']
+matched statement pattern:  ()(int|unsigned\s*int|char|bool|float)\s+([_a-zA-Z]\w*)\s*(?:=\s*([^;]+))?;
+[('', 'unsigned int', 'dist', '')]
+[{'val': '0', 'name': 'dist', 'io': '', 'type': 'unsigned int'}]
+
+Output to:  ./out/shortest_path/default/instance/device_graph_data_types.h
+---  [('G', '<GP_TYPE> d_<GP_NAME>;')]
+------  unsigned int d_source;
+---  [('V', '<GP_TYPE> *d_<GP_NAME>;')]
+------  unsigned int *d_dist;
+------  unsigned int *d_pre;
+---  [('E', '<GP_TYPE> *d_<GP_NAME>;')]
+------  unsigned int *d_weight;
+---  [('M', '<GP_TYPE> *d_<GP_NAME>;')]
+------  unsigned int *d_dist;
+
+Output to:  ./out/shortest_path/default/instance/edge_content_manager.cu
+---  [('E', 'ALLOCATE_ON_DEVICE(<GP_TYPE>, econ->d_<GP_NAME>, econ->d_size);')]
+------  ALLOCATE_ON_DEVICE(unsigned int, econ->d_weight, econ->d_size);
+---  [('E', 'DEALLOCATE_ON_DEVICE(econ->d_<GP_NAME>);')]
+------  DEALLOCATE_ON_DEVICE(econ->d_weight);
+---  [('E_IN', 'SHUFFLE_MEMBER(<GP_TYPE>, econ->d_<GP_NAME>, econ->d_size, d_tmp_buf, thr_shuffle_index);')]
+------  SHUFFLE_MEMBER(unsigned int, econ->d_weight, econ->d_size, d_tmp_buf, thr_shuffle_index);
+---  [('E_OUT', 'INIT_OUT_MEMBERS(<GP_TYPE>, econ->d_<GP_NAME>, econ->d_size, <GP_INIT_VALUE>);')]
+---  [('E', 'DEBUG_OUTPUT(buf, econ.d_<GP_NAME>, "<GP_NAME>: ", econ.d_size, <GP_TYPE>);')]
+------  DEBUG_OUTPUT(buf, econ.d_weight, "weight: ", econ.d_size, unsigned int);
+
+Output to:  ./out/shortest_path/default/instance/generated_io_data_types.h
+---  [('G', '<GP_TYPE> <GP_NAME>;')]
+------  unsigned int source;
+---  [('G', 'in >> global-><GP_NAME>;')]
+------  in >> global->source;
+---  [('G', 'global-><GP_NAME> = <GP_RAND_VALUE>;')]
+------  global->source = RandUtil::RandVertexId();
+---  [('V_IN', '<GP_TYPE> <GP_NAME>;')]
+---  [('V_IN', 'in >> vertex-><GP_NAME>;')]
+---  [('V_IN', 'vertex-><GP_NAME> = <GP_RAND_VALUE>;')]
+---  [('E_IN', '<GP_TYPE> <GP_NAME>;')]
+------  unsigned int weight;
+---  [('E_IN', 'in >> edge-><GP_NAME>;')]
+------  in >> edge->weight;
+---  [('E_IN', 'edge-><GP_NAME> = <GP_RAND_VALUE>;')]
+------  edge->weight = RandUtil::RandSmallUInt();
+
+Output to:  ./out/shortest_path/default/instance/global_manager.cu
+---  [('G', 'dst->d_<GP_NAME> = src.<GP_NAME>;')]
+------  dst->d_source = src.source;
+---  [('G', '<< ", " << "<GP_NAME>: " << global.d_<GP_NAME>')]
+------  << ", " << "source: " << global.d_source
+
+Output to:  ./out/shortest_path/default/instance/host_graph_data_types.h
+---  [('G', '<GP_TYPE> <GP_NAME>;')]
+------  unsigned int source;
+---  [('G', '<GP_NAME> = g.<GP_NAME>;')]
+------  source = g.source;
+---  [('V', '<GP_TYPE> <GP_NAME>;')]
+------  unsigned int dist;
+------  unsigned int pre;
+---  [('V_IN', '<GP_NAME> = v.<GP_NAME>;')]
+---  [('V_OUT', '<GP_NAME> = <GP_INIT_VALUE>;')]
+------  dist = ~0U;
+------  pre = ~0U;
+---  [('V', '<< ", " << <GP_NAME>')]
+------  << ", " << dist
+------  << ", " << pre
+---  [('E', '<GP_TYPE> <GP_NAME>;')]
+------  unsigned int weight;
+---  [('E_IN', '<GP_NAME> = e.<GP_NAME>;')]
+------  weight = e.weight;
+---  [('E_OUT', '<GP_NAME> = <GP_INIT_VALUE>;')]
+---  [('E', '<< ", " << <GP_NAME>')]
+------  << ", " << weight
+
+Output to:  ./out/shortest_path/default/instance/host_in_graph_data_types.h
+---  [('V_IN', '<GP_TYPE> *<GP_NAME>;')]
+---  [('V_IN', 'ALLOCATE_IN_MEMBERS(<GP_TYPE>, <GP_NAME>, size);')]
+---  [('V_IN', 'DEALLOCATE_ON_HOST(<GP_NAME>);')]
+---  [('V_IN', 'COPY_FROM_HOST_TO_DEVICE(<GP_NAME>, dest, device_offset, size, <GP_TYPE>);')]
+---  [('V_IN', '<GP_NAME>[index] = v.<GP_NAME>;')]
+---  [('E_IN', '<GP_TYPE> *<GP_NAME>;')]
+------  unsigned int *weight;
+---  [('E_IN', 'ALLOCATE_IN_MEMBERS(<GP_TYPE>, <GP_NAME>, size);')]
+------  ALLOCATE_IN_MEMBERS(unsigned int, weight, size);
+---  [('E_IN', 'DEALLOCATE_ON_HOST(<GP_NAME>);')]
+------  DEALLOCATE_ON_HOST(weight);
+---  [('E_IN', 'COPY_FROM_HOST_TO_DEVICE(<GP_NAME>, dest, device_offset, size, <GP_TYPE>);')]
+------  COPY_FROM_HOST_TO_DEVICE(weight, dest, device_offset, size, unsigned int);
+---  [('E_IN', '<GP_NAME>[index] = e.<GP_NAME>;')]
+------  weight[index] = e.weight;
+
+Output to:  ./out/shortest_path/default/instance/host_out_graph_data_types.h
+---  [('G', '<< ", " << "<GP_NAME>: " << g.d_<GP_NAME>')]
+------  << ", " << "source: " << g.d_source
+---  [('V_OUT', '<GP_TYPE> *<GP_NAME>;')]
+------  unsigned int *dist;
+------  unsigned int *pre;
+---  [('V_OUT', ', <GP_NAME>(NULL)')]
+------  , dist(NULL)
+------  , pre(NULL)
+---  [('V_OUT', 'ALLOCATE_OUT_MEMBERS(<GP_TYPE>, <GP_NAME>, capacity);')]
+------  ALLOCATE_OUT_MEMBERS(unsigned int, dist, capacity);
+------  ALLOCATE_OUT_MEMBERS(unsigned int, pre, capacity);
+---  [('V_OUT', 'DEALLOCATE_ON_HOST(<GP_NAME>);')]
+------  DEALLOCATE_ON_HOST(dist);
+------  DEALLOCATE_ON_HOST(pre);
+---  [('V_OUT', 'COPY_FROM_DEVICE_TO_HOST(<GP_NAME>, size, src, device_offset, copy_size, <GP_TYPE>);')]
+------  COPY_FROM_DEVICE_TO_HOST(dist, size, src, device_offset, copy_size, unsigned int);
+------  COPY_FROM_DEVICE_TO_HOST(pre, size, src, device_offset, copy_size, unsigned int);
+---  [('V_OUT', '<GP_TYPE> tmp_<GP_NAME> = <GP_NAME>[i];')]
+------  unsigned int tmp_dist = dist[i];
+------  unsigned int tmp_pre = pre[i];
+---  [('V_OUT', '<GP_NAME>[q] = <GP_NAME>[p];')]
+------  dist[q] = dist[p];
+------  pre[q] = pre[p];
+---  [('V_OUT', '<GP_NAME>[q] = tmp_<GP_NAME>;')]
+------  dist[q] = tmp_dist;
+------  pre[q] = tmp_pre;
+---  [('V_OUT', '<< ", " << <GP_NAME>[i]')]
+------  << ", " << dist[i]
+------  << ", " << pre[i]
+---  [('E_OUT', '<GP_TYPE> *<GP_NAME>;')]
+---  [('E_OUT', ', <GP_NAME>(NULL)')]
+---  [('E_OUT', 'ALLOCATE_OUT_MEMBERS(<GP_TYPE>, <GP_NAME>, capacity);')]
+---  [('E_OUT', 'DEALLOCATE_ON_HOST(<GP_NAME>);')]
+---  [('E_OUT', 'COPY_FROM_DEVICE_TO_HOST(<GP_NAME>, size, src, device_offset, copy_size, <GP_TYPE>);')]
+---  [('E_OUT', '<GP_TYPE> tmp_<GP_NAME> = <GP_NAME>[i];')]
+---  [('E_OUT', '<GP_NAME>[q] = <GP_NAME>[p];')]
+---  [('E_OUT', '<GP_NAME>[q] = tmp_<GP_NAME>;')]
+---  [('E_OUT', '<< ", " << <GP_NAME>[i]')]
+
+Output to:  ./out/shortest_path/default/instance/message_content_manager.cu
+---  [('M', '+ RoundUpToMultiples(sizeof(<GP_TYPE>), size, sizeof(unsigned int))')]
+------  + RoundUpToMultiples(sizeof(unsigned int), size, sizeof(unsigned int))
+---  [('M', 'mcon->d_<GP_NAME> = (<GP_TYPE>*)(mcon->d_space + offset); offset += RoundUpToMultiples(sizeof(<GP_TYPE>), size, sizeof(unsigned int));')]
+------  mcon->d_dist = (unsigned int*)(mcon->d_space + offset); offset += RoundUpToMultiples(sizeof(unsigned int), size, sizeof(unsigned int));
+---  [('M', 'ALLOCATE_ON_DEVICE(<GP_TYPE>, mcon->d_<GP_NAME>, mcon->d_size);')]
+------  ALLOCATE_ON_DEVICE(unsigned int, mcon->d_dist, mcon->d_size);
+---  [('M', 'DEALLOCATE_ON_DEVICE(mcon->d_<GP_NAME>);')]
+------  DEALLOCATE_ON_DEVICE(mcon->d_dist);
+---  [('M', 'SHUFFLE_MEMBER(<GP_TYPE>, mcon->d_<GP_NAME>, mcon->d_size, d_tmp_buf, thr_shuffle_index);')]
+------  SHUFFLE_MEMBER(unsigned int, mcon->d_dist, mcon->d_size, d_tmp_buf, thr_shuffle_index);
+---  [('M', 'COPY_FROM_DEVICE_TO_DEVICE(from, to, d_<GP_NAME>, 0, 0, from.d_size, <GP_TYPE>);')]
+------  COPY_FROM_DEVICE_TO_DEVICE(from, to, d_dist, 0, 0, from.d_size, unsigned int);
+---  [('M', 'DEBUG_OUTPUT(buf, mcon.d_<GP_NAME>, "<GP_NAME>: ", mcon.d_size, <GP_TYPE>);')]
+------  DEBUG_OUTPUT(buf, mcon.d_dist, "dist: ", mcon.d_size, unsigned int);
+
+Output to:  ./out/shortest_path/default/instance/user_api.h
+---  [('E', '__device__ <GP_TYPE> get_<GP_NAME>() const { return d_econ.d_<GP_NAME>[index]; }')]
+------  __device__ unsigned int get_weight() const { return d_econ.d_weight[index]; }
+---  [('E_OUT', '__device__ void set_<GP_NAME>(const <GP_TYPE> &value) { d_econ.d_<GP_NAME>[index] = value; }')]
+---  [('M', '__device__ void set_<GP_NAME>(const <GP_TYPE> &value) { d_mcon_send.d_<GP_NAME>[index] = value; }')]
+------  __device__ void set_dist(const unsigned int &value) { d_mcon_send.d_dist[index] = value; }
+---  [('M', '__device__ <GP_TYPE> get_<GP_NAME>() const { return d_mcon_recv.d_<GP_NAME>[mcon_recv_idx]; }')]
+------  __device__ unsigned int get_dist() const { return d_mcon_recv.d_dist[mcon_recv_idx]; }
+---  [('G', '__device__ <GP_TYPE> get_<GP_NAME>() const { return d_global.d_<GP_NAME>; }')]
+------  __device__ unsigned int get_source() const { return d_global.d_source; }
+---  [('V', '__device__ <GP_TYPE> get_<GP_NAME>() const { return d_vcon.d_<GP_NAME>[index]; }')]
+------  __device__ unsigned int get_dist() const { return d_vcon.d_dist[index]; }
+------  __device__ unsigned int get_pre() const { return d_vcon.d_pre[index]; }
+---  [('V_OUT', '__device__ void set_<GP_NAME>(const <GP_TYPE> &value) { d_vcon.d_<GP_NAME>[index] = value; }')]
+------  __device__ void set_dist(const unsigned int &value) { d_vcon.d_dist[index] = value; }
+------  __device__ void set_pre(const unsigned int &value) { d_vcon.d_pre[index] = value; }
+
+Output to:  ./out/shortest_path/default/instance/vertex_content_manager.cu
+---  [('V', 'ALLOCATE_ON_DEVICE(<GP_TYPE>, vcon->d_<GP_NAME>, vcon->d_size);')]
+------  ALLOCATE_ON_DEVICE(unsigned int, vcon->d_dist, vcon->d_size);
+------  ALLOCATE_ON_DEVICE(unsigned int, vcon->d_pre, vcon->d_size);
+---  [('V', 'DEALLOCATE_ON_DEVICE(vcon->d_<GP_NAME>);')]
+------  DEALLOCATE_ON_DEVICE(vcon->d_dist);
+------  DEALLOCATE_ON_DEVICE(vcon->d_pre);
+---  [('V_IN', 'SHUFFLE_MEMBER(<GP_TYPE>, vcon->d_<GP_NAME>, vcon->d_size, d_tmp_buf, thr_shuffle_index);')]
+---  [('V_OUT', 'INIT_OUT_MEMBERS(<GP_TYPE>, vcon->d_<GP_NAME>, vcon->d_size, <GP_INIT_VALUE>);')]
+------  INIT_OUT_MEMBERS(unsigned int, vcon->d_dist, vcon->d_size, ~0U);
+------  INIT_OUT_MEMBERS(unsigned int, vcon->d_pre, vcon->d_size, ~0U);
+---  [('V', 'DEBUG_OUTPUT(buf, vcon.d_<GP_NAME>, "<GP_NAME>: ", vcon.d_size, <GP_TYPE>);')]
+------  DEBUG_OUTPUT(buf, vcon.d_dist, "dist: ", vcon.d_size, unsigned int);
+------  DEBUG_OUTPUT(buf, vcon.d_pre, "pre: ", vcon.d_size, unsigned int);
+
+cp shortest_path/user_compute.h shortest_path/cpu_algorithm.cu shortest_path/result_compare.h shortest_path/adjustable_heap.h ./out/shortest_path/default/instance
+# awk 'BEGIN { cmd="cp -i shortest_path/user_compute.h shortest_path/cpu_algorithm.cu shortest_path/result_compare.h shortest_path/adjustable_heap.h instance/"; print "n" | cmd; }'
+/usr/local/cuda-7.5/bin/nvcc -D LAMBDA_DUMMY -m64 -O3 -gencode arch=compute_52,code=sm_52 -I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include -L./inc/sprng2.0-lite/lib -lsprng -lm -I./core -I./out/shortest_path/default/instance -c out/shortest_path/default/instance/cpu_algorithm.cu -o ./out/shortest_path/default/bin/cpu_algorithm.o
+/usr/local/cuda-7.5/bin/nvcc -D LAMBDA_DUMMY -m64 -O3 -gencode arch=compute_52,code=sm_52 -I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include -L./inc/sprng2.0-lite/lib -lsprng -lm -I./core -I./out/shortest_path/default/instance -c out/shortest_path/default/instance/edge_content_manager.cu -o ./out/shortest_path/default/bin/edge_content_manager.o
+/usr/local/cuda-7.5/bin/nvcc -D LAMBDA_DUMMY -m64 -O3 -gencode arch=compute_52,code=sm_52 -I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include -L./inc/sprng2.0-lite/lib -lsprng -lm -I./core -I./out/shortest_path/default/instance -c out/shortest_path/default/instance/global_manager.cu -o ./out/shortest_path/default/bin/global_manager.o
+/usr/local/cuda-7.5/bin/nvcc -D LAMBDA_DUMMY -m64 -O3 -gencode arch=compute_52,code=sm_52 -I/usr/local/cuda-7.5/include -I/usr/local/cuda-7.5/samples/common/inc -I./inc/sprng2.0-lite/include -L./inc/sprng2.0-lite/lib -lsprng -lm -I./core -I./out/shortest_path/default/instance -c core/gpu_storage.cu -o ./out/shortest_path/default/bin/gpu_storage.o
